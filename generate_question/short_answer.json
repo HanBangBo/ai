@@ -1,6 +1,22 @@
 [
     {
-        "example_questions": "도널드 트럼프 미국 대통령 당선자가 그린란드와 파나마운하를 미국령으로 만들어야 한다는 주장을 거듭하자 미국 뉴욕포스트가 1면에 실은 트럼프의 대외정책 명칭은?",
+        "example_questions": "야마구치현 우베시 도코나미 해안에 있던 해저 탄광으로, 2차 대전 도중 조선인 136명이 수몰된 일본 최대 규모의 탄광 수몰 사고가 발생한 이곳은 어디인가?",
+        "example_answers": "도코나미 해저 탄광"
+    },
+    {
+        "example_questions": "비상 계엄령이란 무엇인가?",
+        "example_answers": "국가 위기 상황에서 군사적 통제로 법과 질서를 유지하는 제도"
+    },
+    {
+        "example_questions": "저가 제품들의 가격이 고가 제품들보다 빠르게 상승하는 현상은?",
+        "example_answers": "저가 인플레이션"
+    },
+    {
+        "example_questions": "형사소송법이란 무엇인가?",
+        "example_answers": "범죄 수사와 공판 절차를 규정하는 법률"
+    },
+    {
+        "example_questions": "도널드 트럼프 미국 대통령 당선자가 그린란드와 파나마운하를 미국령으로 만들어야 한다는 주장을 거듭하자, 미국 뉴욕포스트가 1면에 실은 트럼프의 대외정책 명칭은?",
         "example_answers": "아메리카 퍼스트"
     },
     {
@@ -8,7 +24,23 @@
         "example_answers": "ILS"
     },
     {
+        "example_questions": "통상임금이란 무엇인가?",
+        "example_answers": "근로자가 정기적·일률적으로 지급받는 기본급과 수당"
+    },
+    {
+        "example_questions": "주가순자산비율(PBR)이란 무엇인가?",
+        "example_answers": "주가를 주당순자산가치(BPS)로 나눈 값"
+    },
+    {
+        "example_questions": "초고령사회란 무엇인가?",
+        "example_answers": "전체 인구 중 65세 이상 고령자가 20% 이상을 차지하는 사회"
+    },
+    {
         "example_questions": "양곡관리법과 관련하여 2024년 개정안에서 가장 논란이 되었던 내용은?",
         "example_answers": "쌀 자동시장격리제"
+    },
+    {
+        "example_questions": "포브스가 2025년 가장 주목해야 할 흐름으로 선정한, 자율적으로 생각하고 학습하고 행동할 수 있는 기술은?",
+        "example_answers": "생성형 AI"
     }
 ]
