@@ -91,7 +91,6 @@ def create_prompt(type_value):
             partial_variables=example_dict,  # 🚀 리스트 그대로 전달
             template=template
         )
-
     return prompt
 
 
@@ -109,10 +108,6 @@ def get_random_questions(type_value):
         return load_questions("short_answer.json", 2)
 
 
-p1 = create_prompt("객관식")
-formatted_prompt1 = p1.format(news_content="합쳐진 뉴스 본문")
-p2 = create_prompt("주관식")
-formatted_prompt2 = p2.format(news_content="합쳐진 뉴스 본문")
+def create_keywords(source_value, keyword):
+    return
 
-print(formatted_prompt1)
-print(formatted_prompt2)

@@ -2,34 +2,18 @@ import json
 import re
 from langchain_community.chat_models import ChatOpenAI
 from langchain.chains import LLMChain
-from fastapi import FastAPI
-from typing import List
-from generate_question.create_prompt import create_prompt
+from generate_question.create_factor import create_prompt
 
 
-app = FastAPI()
 OPENAI_API_KEY = "api_key"
-llm = ChatOpenAI(model_name="gpt-4o", openai_api_key=OPENAI_API_KEY)
+MODEL = "gpt-4o"
+llm = ChatOpenAI(model_name=MODEL, openai_api_key=OPENAI_API_KEY)
 
 
-@app.get("/generate_questions/")
-async def generate_questions(keyword: List[str], type_value: str, source_value: str, date: str):
-    question = []  # 여러 개의 JSON을 담을 리스트
-
-    keywords = return_keyword(source_value, keyword)
-    for k in keywords:
-        json_temp = generate_question_with_lang_chain(type_value, k, date, source_value)
-        json_temp['keyword'] = k
-        json_temp['type'] = type_value
-        json_temp['source'] = source_value
-        question.append(json_temp)
-    return question
-
-
-def generate_question_with_lang_chain(type_value, keyword, date, source):
+def generate_question_with_lang_chain(type_value, keyword, period, source):
     # LangChain을 이용하여 뉴스 내용을 기반으로 문제를 생성
     prompt_template = create_prompt(type_value)
-    news_content = create_news_content(keyword, date, source)
+    news_content = create_news_content(keyword, period, source)
 
     # ✅ LangChain 최신 방식 적용
     question_chain = LLMChain(llm=llm, prompt=prompt_template)
@@ -37,10 +21,6 @@ def generate_question_with_lang_chain(type_value, keyword, date, source):
     response = question_chain.invoke({"news_content": news_content})
     json_text = extract_json(response["text"])
     return json.loads(json_text)
-
-
-def return_keyword(source, keyword):
-    return [""]
 
 
 def extract_json(text):
