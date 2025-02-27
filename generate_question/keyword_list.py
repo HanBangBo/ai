@@ -4,8 +4,8 @@ import os
 from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings
 from langchain_core.documents import Document
-openai_api_key = os.getenv("OPENAI_API_KEY")
 
+openai_api_key = os.getenv("OPENAI_API_KEY")
 save_path = '/Users/sondain/Desktop/hakaton/keyword_faiss/index.faiss'
 embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
 
@@ -18,7 +18,7 @@ def generate_user_keywords(user_id, user_keywords_data, keywords_df, press=None,
     Parameters:
         - user_id (str): 사용자 ID
         - user_keywords_data (DataFrame): 유저별 틀린 문제 키워드 데이터
-        - news_data_df (DataFrame): 뉴스 데이터 (키워드 포함)
+        - kewords_df (vector db): 키워드 벡터 DB
         - press (str, optional): 사용자가 선택한 언론사
         - category (str, optional): 사용자가 선택한 카테고리
 
