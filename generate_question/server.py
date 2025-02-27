@@ -3,6 +3,7 @@ from typing import List
 from generate_question.generate_question import generate_question_with_lang_chain
 from generate_question.create_factor import create_keywords
 
+
 app = FastAPI()
 
 

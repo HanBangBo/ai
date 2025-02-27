@@ -5,27 +5,28 @@ from langchain_openai import OpenAIEmbeddings
 
 # OpenAI API Key 설정
 openai_api_key = os.getenv("OPENAI_API_KEY")
-save_path = "/Users/sondain/Desktop/hakaton/keyword_faiss"
+save_path = "//mnt/efs_faiss_index//keyword_faiss"
 
 # FAISS 인덱스 로드
 embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
 vector_db = FAISS.load_local(save_path, embeddings, allow_dangerous_deserialization=True)
 
+
 def create_keywords(keyword, source_type, source_value):
     """
     ✅ 사용자 맞춤형 키워드 리스트를 생성하는 함수
-    
+
     Parameters:
         - params (dict): 백엔드에서 넘어온 데이터
           - user (str): 사용자 ID
           - source_type (str): '언론사' 또는 '카테고리'
           - source_value (list): 선택된 언론사 or 카테고리 리스트
           - keyword (dict): {키워드: 오답률} 형태의 딕셔너리
-        
+
     Returns:
         - list: 최종 10개 키워드 리스트
     """
-    
+
     additional_keywords = []
 
     # ✅ FAISS 벡터DB에서 필터링하여 키워드 가져오기
@@ -49,7 +50,10 @@ def create_keywords(keyword, source_type, source_value):
     keyword_counts = Counter(additional_keywords)
     sorted_keywords = [kw for kw, _ in keyword_counts.most_common()]
 
-    final_keyword_list = keyword.copy()
+
+    final_keyword_list = []
+    for key in keyword:
+        final_keyword_list.append(key)
 
     # ✅ 10개 이상 채우기
     for kw in sorted_keywords:
@@ -61,22 +65,9 @@ def create_keywords(keyword, source_type, source_value):
         extra_keywords = [doc.page_content for doc in extra_results]
         extra_keyword_counts = Counter(extra_keywords)
         sorted_extra_keywords = [kw for kw, _ in extra_keyword_counts.most_common()]
-        
+
         for kw in sorted_extra_keywords:
             if len(final_keyword_list) < 10 and kw not in final_keyword_list:
                 final_keyword_list.append(kw)
 
     return final_keyword_list[:10]
-
-# ✅ 테스트 실행
-params = {
-    "user": "2",
-    "type_value": "객관식",
-    "source_value": "헤럴드경제",  # 선택한 언론사 or 카테고리
-    "period": 1,
-    "keyword": {},  # 키워드가 비어 있음
-    "source_type": "언론사"  # '언론사' 또는 '카테고리'
-}
-
-user_keywords_list = create_keywords(["탄핵","한국"], source_type="카테고리", source_value="사회")
-print(f"🎯 생성된 키워드 리스트: {user_keywords_list}")

@@ -1,51 +1,60 @@
 import json
 import re
-from langchain_community.chat_models import ChatOpenAI
+import os
 from langchain.chains import LLMChain
-from generate_question.create_factor import create_prompt
+from langchain_openai import ChatOpenAI
+from langchain.prompts import PromptTemplate
+from create_factor import create_prompt
+from keyword_news_search import search_news
+from langchain.schema.runnable import RunnableSequence
 
 
-OPENAI_API_KEY = "api_key"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MODEL = "gpt-4o"
-llm = ChatOpenAI(model_name=MODEL, openai_api_key=OPENAI_API_KEY)
+llm = ChatOpenAI(model_name=MODEL, openai_api_key=OPENAI_API_KEY, max_tokens=512)
 
 
-def generate_question_with_lang_chain(type_value, keyword, period, source):
-    # LangChain을 이용하여 뉴스 내용을 기반으로 문제를 생성
+def generate_question_with_lang_chain(type_value, keyword, period, source, source_type):
     prompt_template = create_prompt(type_value)
-    news_content = create_news_content(keyword, period, source)
+    # LangChain을 이용하여 뉴스 내용을 기반으로 문제를 생성
+    if source_type == "언론사":
+        news_content = search_news(keyword, top_k=3, similarity_threshold=0.5, date_filter=period, press_filter=source)
+    elif source_type == "카테고리":
+        news_content = search_news(keyword, top_k=3, similarity_threshold=0.5, date_filter=period, section_filter=source)
 
-    # ✅ LangChain 최신 방식 적용
-    question_chain = LLMChain(llm=llm, prompt=prompt_template)
+    # RunnableSequence 적용
+    question_chain = prompt_template | llm  # RunnableSequence 사용
 
+    # 문제 생성
     response = question_chain.invoke({"news_content": news_content})
-    json_text = extract_json(response["text"])
-    return json.loads(json_text)
-
-
-def extract_json(text):
-    # 응답에서 JSON 부분만 추출하는 함수
-    match = re.search(r"```json\n(.*?)\n```", text, re.DOTALL)
-    if match:
-        return match.group(1)
+    if hasattr(response, "content"):
+        response_text = response.content  # AIMessage에서 텍스트 추출
     else:
-        raise ValueError("JSON 데이터를 찾을 수 없습니다.")
+        response_text = str(response)  # 안전장치 (혹시라도 오류 방지)
+
+    # JSON 변환
+    json_data = extract_json_from_text(response_text)
+    return json_data
 
 
-def create_news_content(keyword, date):
-    """기존 뉴스 데이터 그대로 유지"""
-    content = """
-    윤석열 대통령은 25일 헌법재판소에서 열린 탄핵심판 최종변론에서 직접 최후진술을 했다. 이는 헌정 사상 처음 있는 일이다.
-    윤 대통령은 12.3 비상계엄 선포가 거대 야당의 국정 마비 시도에 대응하기 위한 '대국민 호소'였으며, 자신을 위한 결정이 아니었다고 주장했다.
-    비상계엄은 과거 군사 정권의 계엄과 다르며, 국가 위기를 국민에게 알리고자 했다고 강조했다.
-    국회에 투입된 병력은 최소한으로 유지했으며, 내란을 일으킬 의도가 없었다고 주장했다.
-    탄핵소추 이후 국민과 청년들이 나라를 지키기 위해 나섰다며, 자신이 직무에 복귀하면 개헌과 정치개혁에 집중하겠다고 밝혔다.
+def extract_json_from_text(text):
+    try:
+        json_match = re.search(r"\{.*\}", text, re.DOTALL)  # JSON 패턴 추출
+        if json_match:
+            json_str = json_match.group(0)  # 정규식으로 찾은 JSON 문자열
+            return json.loads(json_str)  # JSON 변환
+        else:
+            raise ValueError("JSON 데이터가 없습니다.")
 
-    윤 대통령은 탄핵심판 최종변론에서 12.3 비상계엄이 야당의 국정 운영 방해에 대응하기 위한 것이었다고 주장하며, 이를 '대국민 호소'라고 표현했다.
-    계엄 선포가 국가를 위한 결정이었으며, 군사 쿠데타와 같은 의도가 없었음을 강조했다.
-    국회의 예산·입법권 남용을 비판하며, 정부 운영을 방해하는 야당의 태도를 강하게 질타했다.
-    탄핵심판에서 자신이 복귀할 경우, 남은 임기에 연연하지 않고 개헌을 추진하겠다고 선언했다. 이는 임기 단축을 전제로 한 정치개혁 의지를 내비친 것으로 해석된다.
-    국민들에게 계엄으로 인한 혼란과 불편을 끼친 점에 대해 사과했으며, 헌법재판소에 자신의 결단을 고려해 줄 것을 요청했다.
-    법조계에서는 헌재의 최종 선고가 3월 초중순쯤 이뤄질 것으로 전망하고 있다.
-    """
-    return content
+    except json.JSONDecodeError as e:
+        print(f"JSON 변환 오류: {e}")
+        print(text)
+        return None
+
+
+# ✅ 실행 예제
+if __name__ == "__main__":
+    q1 = generate_question_with_lang_chain(type_value="주관식", keyword="엔비디아", period=6, source="한국경제", source_type="언론사")
+    print(q1)
+    q1 = generate_question_with_lang_chain(type_value="주관식", keyword="엔비디아", period=6, source="정치", source_type="카테고리")
+    print(q1)
