@@ -45,13 +45,13 @@ def create_or_update_news_faiss(news_articles, save_path=FAISS_PATH + "news_fais
     # 중복을 제거한 새로운 뉴스 리스트 생성
     new_news_documents = [
         Document(
-            page_content=f"{article['title']} {article['content']}",  # 제목 + 본문 결합
+            page_content=f"{article['content']}",  # 제목 + 본문 결합
             metadata={"press": article["press"], "date": article["date"], "keyword": article["keyword"],
                       "section": article["section"]}
         )
         for article in news_articles
         # 중복 방지: 기존 벡터 + 메타데이터 조합이 있는지 확인
-        if (f"{article['title']} {article['content']}", article["press"], article["date"], article["keyword"],
+        if (f"{article['content']}", article["press"], article["date"], article["keyword"],
             article["section"]) not in existing_entries
     ]
 
@@ -108,7 +108,6 @@ def create_or_update_keyword_faiss(news_articles, save_path=FAISS_PATH + "keywor
 def log_error(batch_index, article, error):
     with open(ERROR_LOG_FILE, "a", encoding="utf-8") as f:
         f.write(f"\n[Batch {batch_index}] 오류 발생!\n")
-        f.write(f"기사 제목: {article.get('title', 'N/A')}\n")
         f.write(f"언론사: {article.get('press', 'N/A')}\n")
         f.write(f"날짜: {article.get('date', 'N/A')}\n")
         f.write(f"오류 메시지: {error}\n")
