@@ -1,57 +1,82 @@
-import pandas as pd
-from collections import Counter
 import os
+from collections import Counter
 from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings
-from langchain_core.documents import Document
 
+# OpenAI API Key 설정
 openai_api_key = os.getenv("OPENAI_API_KEY")
-save_path = '/Users/sondain/Desktop/hakaton/keyword_faiss/index.faiss'
+save_path = "/Users/sondain/Desktop/hakaton/keyword_faiss"
+
+# FAISS 인덱스 로드
 embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+vector_db = FAISS.load_local(save_path, embeddings, allow_dangerous_deserialization=True)
 
-vector_db = FAISS.load_local(save_path, embeddings)
-
-def generate_user_keywords(user_id, user_keywords_data, keywords_df, press=None, category=None):
+def create_keywords(keyword, source_type, source_value):
     """
     ✅ 사용자 맞춤형 키워드 리스트를 생성하는 함수
-
+    
     Parameters:
-        - user_id (str): 사용자 ID
-        - user_keywords_data (DataFrame): 유저별 틀린 문제 키워드 데이터
-        - kewords_df (vector db): 키워드 벡터 DB
-        - press (str, optional): 사용자가 선택한 언론사
-        - category (str, optional): 사용자가 선택한 카테고리
-
+        - params (dict): 백엔드에서 넘어온 데이터
+          - user (str): 사용자 ID
+          - source_type (str): '언론사' 또는 '카테고리'
+          - source_value (list): 선택된 언론사 or 카테고리 리스트
+          - keyword (dict): {키워드: 오답률} 형태의 딕셔너리
+        
     Returns:
         - list: 최종 10개 키워드 리스트
     """
-
-
-    # ✅ 1️⃣ 사용자 틀린 문제 키워드 가져오기
-    user_data = user_keywords_data[user_keywords_data["user"] == user_id]
-    incorrect_keywords = user_data.sort_values("incorrect_count", ascending=False)["keyword"].tolist()
-
-    # ✅ 2️⃣ 사용자가 선택한 언론사 & 카테고리 키워드 가져오기
-    additional_keywords = []
     
-    if press:
-        press_keywords = keywords_df[keywords_df["press"] == press]["keywords"].explode().tolist()
-        additional_keywords.extend(press_keywords)
+    additional_keywords = []
 
-    if category:
-        category_keywords = keywords_df[keywords_df["category"] == category]["keywords"].explode().tolist()
-        additional_keywords.extend(category_keywords)
+    # ✅ FAISS 벡터DB에서 필터링하여 키워드 가져오기
+    if source_type == "언론사":
+        results = vector_db.similarity_search("", k=100, filter={"press": source_value})
+        filtered_results = [
+            doc.page_content for doc in results if doc.metadata.get("press") == source_value
+        ]
+        print(f"📌 언론사 '{source_value}'에서 가져온 키워드 개수: {len(filtered_results)}")  # ✅ 디버깅
+        additional_keywords.extend(filtered_results)
 
-    # ✅ 3️⃣ 키워드 빈도수 계산 및 추가
+    elif source_type == "카테고리":
+        results = vector_db.similarity_search("", k=100, filter={"section": source_value})
+        filtered_results = [
+            doc.page_content for doc in results if doc.metadata.get("section") == source_value
+        ]
+        print(f"📌 카테고리 '{source_value}'에서 가져온 키워드 개수: {len(filtered_results)}")  # ✅ 디버깅
+        additional_keywords.extend(filtered_results)
+
+    # ✅ 키워드 빈도수 계산 후 가장 많이 나온 키워드 추출
     keyword_counts = Counter(additional_keywords)
     sorted_keywords = [kw for kw, _ in keyword_counts.most_common()]
 
-    # ✅ 4️⃣ 최종 키워드 리스트 구성 (10개 이상 보장)
-    final_keyword_list = incorrect_keywords.copy()
-    
+    final_keyword_list = keyword.copy()
+
+    # ✅ 10개 이상 채우기
     for kw in sorted_keywords:
-        if len(final_keyword_list) < 10 and kw not in final_keyword_list:
+        if len(final_keyword_list) < 10 and kw not in keyword:
             final_keyword_list.append(kw)
+
+    if len(final_keyword_list) < 10:
+        extra_results = vector_db.similarity_search("", k=200)  # 더 많은 데이터 검색
+        extra_keywords = [doc.page_content for doc in extra_results]
+        extra_keyword_counts = Counter(extra_keywords)
+        sorted_extra_keywords = [kw for kw, _ in extra_keyword_counts.most_common()]
+        
+        for kw in sorted_extra_keywords:
+            if len(final_keyword_list) < 10 and kw not in final_keyword_list:
+                final_keyword_list.append(kw)
 
     return final_keyword_list[:10]
 
+# ✅ 테스트 실행
+params = {
+    "user": "2",
+    "type_value": "객관식",
+    "source_value": "헤럴드경제",  # 선택한 언론사 or 카테고리
+    "period": 1,
+    "keyword": {},  # 키워드가 비어 있음
+    "source_type": "언론사"  # '언론사' 또는 '카테고리'
+}
+
+user_keywords_list = create_keywords(["탄핵","한국"], source_type="카테고리", source_value="사회")
+print(f"🎯 생성된 키워드 리스트: {user_keywords_list}")
