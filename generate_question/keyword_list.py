@@ -35,11 +35,11 @@ def generate_user_keywords(user_id, user_keywords_data, keywords_df, press=None,
     additional_keywords = []
     
     if press:
-        press_keywords = vector_db[vector_db["press"] == press]["keywords"].explode().tolist()
+        press_keywords = keywords_df[keywords_df["press"] == press]["keywords"].explode().tolist()
         additional_keywords.extend(press_keywords)
 
     if category:
-        category_keywords = vector_db[vector_db["category"] == category]["keywords"].explode().tolist()
+        category_keywords = keywords_df[keywords_df["category"] == category]["keywords"].explode().tolist()
         additional_keywords.extend(category_keywords)
 
     # ✅ 3️⃣ 키워드 빈도수 계산 및 추가
